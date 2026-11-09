@@ -1,0 +1,44 @@
+path: data/processed/traffic_lights
+train: images/train
+val: images/val
+test: images/test
+
+names:
+  0: red
+  1: yellow
+  2: green
+  3: off
+
+nc: 4
+
+source:
+  provider: huggingface
+  repo_id: lincolnn2026/traffic_light_dataset
+  train_count: 120
+  val_count: 40
+  test_count: 20
+  class_aliases:
+    red: red
+    Red: red
+    RED: red
+    traffic_light_red: red
+    yellow: yellow
+    Yellow: yellow
+    YELLOW: yellow
+    amber: yellow
+    traffic_light_yellow: yellow
+    green: green
+    Green: green
+    GREEN: green
+    traffic_light_green: green
+    off: off
+    Off: off
+    OFF: off
+    traffic_light_off: off
+    none: off
+    inactive: off
+  roboflow_fallback:
+    workspace: yolo-babua
+    project: traffic-light-detection-h8cvg
+    version: 2
+    format: yolov8

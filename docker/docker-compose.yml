@@ -1,0 +1,79 @@
+services:
+  infer:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: infer
+    image: traffic-light-detect:infer
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - ROBOFLOW_API_KEY=${ROBOFLOW_API_KEY:-}
+    volumes:
+      - ../data:/app/data
+      - ../weights:/app/weights
+      - ../outputs:/app/outputs
+      - ../samples:/app/samples
+      - ../runs:/app/runs
+    command:
+      [
+        "scripts/infer.py",
+        "--weights",
+        "weights/best.pt",
+        "--source",
+        "samples",
+        "--no-show",
+        "--save",
+        "outputs/infer",
+      ]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import torch, ultralytics, cv2; print('ok')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  train:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: train
+    image: traffic-light-detect:train
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - ROBOFLOW_API_KEY=${ROBOFLOW_API_KEY:-}
+    volumes:
+      - ../data:/app/data
+      - ../weights:/app/weights
+      - ../outputs:/app/outputs
+      - ../runs:/app/runs
+      - ../configs:/app/configs
+    command:
+      [
+        "scripts/train.py",
+        "--config",
+        "configs/train.yaml",
+        "--device",
+        "0",
+      ]
+
+  benchmark:
+    image: traffic-light-detect:infer
+    runtime: nvidia
+    profiles: ["bench"]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - ../weights:/app/weights
+      - ../outputs:/app/outputs
+    command:
+      [
+        "scripts/benchmark.py",
+        "--weights",
+        "weights/best.pt",
+        "--backend",
+        "all",
+        "--include-tensorrt",
+        "--iters",
+        "50",
+      ]

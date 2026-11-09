@@ -1,0 +1,2 @@
+red	data/processed/traffic_lights/images/val/004020.jpg
+green	data/processed/traffic_lights/images/val/004009.jpg

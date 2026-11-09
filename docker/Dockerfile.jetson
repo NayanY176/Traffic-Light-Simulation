@@ -1,0 +1,40 @@
+ARG L4T_IMAGE=nvcr.io/nvidia/l4t-pytorch:r35.2.1-pth2.0-py3
+FROM ${L4T_IMAGE}
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONPATH=/app
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libgl1 \
+        libglib2.0-0 \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --upgrade pip \
+    && pip install ultralytics==8.3.49 opencv-python-headless==4.10.0.84 \
+        PyYAML==6.0.2 tqdm==4.67.1 matplotlib==3.9.2 pandas==2.2.3 \
+        roboflow==1.1.49 typer==0.15.1 rich==13.9.4 requests==2.32.3 \
+        onnx==1.17.0
+
+RUN useradd --create-home --shell /bin/bash appuser || true
+
+COPY configs ./configs
+COPY src ./src
+COPY scripts ./scripts
+COPY samples ./samples
+
+RUN mkdir -p /app/data /app/weights /app/outputs /app/runs \
+    && chown -R appuser:appuser /app || true
+
+USER appuser
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=3 \
+    CMD python -c "import torch, ultralytics, cv2; print('ok')" || exit 1
+
+ENTRYPOINT ["python"]
+CMD ["scripts/infer.py", "--source", "samples", "--no-show", "--save", "outputs/infer"]
